@@ -1,3 +1,5 @@
+import sys
+import getopt
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt; plt.rcParams['image.cmap'] = 'Set1'
@@ -7,7 +9,6 @@ import scipy.optimize
 import inflect
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
-from rpy2.robjects import default_ri2py
 circularlib=importr('circular')
 statslib=importr('stats')
 circular=robjects.r('circular')
@@ -80,37 +81,54 @@ def get_stats(df,sr=1,m='yw'):
     return amps, pers, phases
 
 
-def gen_phase_plot(l):
-    ax = plt.subplot(111, projection='polar')
-    for i in l[1].keys():
-        ax.scatter(l[2][i], l[1][i],label=i)
-    ax.grid(True)
-    ax.set_theta_direction(-1)
-    ax.set_theta_offset(np.pi/2)
-    ax.set_thetagrids(angles=np.linspace(0,360,12), labels=range(0,22,2))
-    ax.set_title("A line plot on a polar axis", va='bottom')
-    plt.legend(loc="lower right")
-    plt.show()
-    plt.close()
+def gen_phase_plot(l,p,n):
+     ax = plt.subplot(111, projection='polar')
+     for i in l[1].keys():
+         ax.scatter(l[2][i], l[1][i],label=i)
+     ax.grid(True)
+     ax.set_theta_direction(-1)
+     ax.set_theta_offset(np.pi/2)
+     ax.set_thetagrids(angles=np.linspace(0,360,12), labels=range(0,22,2))
+     ax.set_title(n, va='bottom')
+     ax.set_rmax(1 + np.floor(max([max(i) for i in list(l[1].values())])))
+     ax.set_rmin(np.ceil(min([min(i) for i in list(l[1].values())])-1))
+     plt.figtext(0.78, 0.2,'p value of equal \nphases = '+str(round(p,2)))
+     plt.legend(bbox_to_anchor=[1.1, 1.1])
+     plt.savefig(n+'_phase_v_period.pdf')
+     plt.close()
 
+def run_analysis(fname):
+         data = pd.read_csv(fname,index_col=0)
+         bname = fname[:-4]
+         gen_tsplot(data,bname)
+         detrended = detrend(data)
+         gen_tsplot(detrended,bname+'_detrended')
+         stats = get_stats(detrended)
+         circdata = [circular(robjects.FloatVector([(j*2*np.pi%22)/22 for j in i]),units="radians", zero=0, rotation='clock') for i in stats[2].values()]
+         p = inflect.engine()
+         testdata_form =[]
+         for i in range(len(circdata)):
+             testdata_form.append(p.number_to_words(i)+' = circdata['+str(i)+']')
+         testdata = eval('rlist('+', '.join(testdata_form)+')')
+         wwt_out = wwt(testdata)
+         pval = float(wwt_out[3].r_repr())
+         gen_phase_plot(stats,pval,bname)
 
+def main(argv):
+    inputfile = ''
+    outputfile = ''
+    try:
+        opts, args = getopt.getopt(argv,"h:i:",["help","ifile="])
+    except getopt.GetoptError:
+        print('residuals.py -i <inputfile>')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ('-h',"--help"):
+            print('residuals.py -i <inputfile> -o <outputfile> -s <subset%> -n <#processes> -p <#permutations> -a <alphalevel> -d <designtype> -e <experimenttype> -b <bdesignpath>')
+            sys.exit()
+        elif opt in ("-i", "--ifile"):
+            inputfile = arg
+    run_analysis(inputfile)
 
-
-data = pd.read_csv('1640.csv',index_col=0)
-gen_tsplot(data,'1640')
-detrended = detrend(data)
-gen_tsplot(detrended,'1640_detrended')
-
-stats = get_stats(detrended)
-
-
-
-circdata = [circular(robjects.FloatVector(i),units="degrees", template="geographics") for i in stats[2].values()]
-p = inflect.engine()
-testdata_form =[]
-for i in range(len(circdata)):
-    testdata_form.append(p.number_to_words(i)+' = circdata['+str(i)+']')
-
-testdata = eval('rlist('+', '.join(testdata_form)+')')
-wwt_out = wwt(testdata)
-float(wwt_out[3].r_repr())
+if __name__ == '__main__':
+    main(sys.argv[1:])
