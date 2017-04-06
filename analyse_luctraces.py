@@ -27,11 +27,11 @@ def get_app(e,srate,mode):
     #per = np.abs(srate/freq[pindex])[0]
     if mode == 'yw':
         spec = specar(robjects.FloatVector(e), 1000, order = 15, method = "yule-walker", plot='FALSE')
-        pindex =  np.where(np.asarray(spec[1])==np.max(np.asarray(spec[1])[np.asarray(spec[0]) > (srate/48)]))
+        pindex =  np.where(np.asarray(spec[1])==np.max(np.asarray(spec[1])[np.asarray(spec[0]) > (srate/72)]))
         per = 1/np.asarray(spec[0])[np.max(pindex[0])]
     elif mode =='fft':
         spec = specpgram(robjects.FloatVector(e), plot='FALSE')
-        pindex =  np.where(np.asarray(spec[1])==np.max(np.asarray(spec[1])[np.asarray(spec[0]) > (srate/48)]))
+        pindex =  np.where(np.asarray(spec[1])==np.max(np.asarray(spec[1])[np.asarray(spec[0]) > (srate/72)]))
         per = 1/np.asarray(spec[0])[np.max(pindex[0])]
     return amp, phase, per
 
@@ -48,7 +48,12 @@ def gen_tsplot(df,fname):
     ldf['replicate'] = ldf['variable'].apply(lambda x: x.split('.')[1] if len(x.split('.')) != 1 else '0')
     ldf['variable'] = ldf['variable'].apply(lambda x: x.split('.')[0])
     ldf.columns = ['Frame','Genotype','Luminescence','Replicate']
-    sns.tsplot(time="Frame", value="Luminescence", unit='Replicate', condition="Genotype",data=ldf,color="Set1",ci=95)
+    fig = plt.figure()
+    ax = plt.subplot(111)
+    sns.tsplot(time="Frame", value="Luminescence", unit='Replicate', condition="Genotype",data=ldf,color="Set1",ci=95,ax=ax)
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.savefig(fname+'.pdf')
     plt.close()
 
@@ -128,7 +133,7 @@ def main(argv):
         sys.exit(2)
     for opt, arg in opts:
         if opt in ('-h',"--help"):
-            print('residuals.py -i <inputfile> -o <outputfile> -s <subset%> -n <#processes> -p <#permutations> -a <alphalevel> -d <designtype> -e <experimenttype> -b <bdesignpath>')
+            print('residuals.py -i <inputfile>')
             sys.exit()
         elif opt in ("-i", "--ifile"):
             inputfile = arg
