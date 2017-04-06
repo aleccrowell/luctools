@@ -56,6 +56,7 @@ def gen_tsplot(df,fname):
 def detrend(df):
     ndf = df.copy()
     for i in range(len(ndf.columns.values)):
+        ndf.iloc[:,i] = ndf.iloc[:,i].values - np.min(ndf.iloc[:,i].values) + 1
         A, K = fit_exp_linear(ndf.iloc[:,i].index,ndf.iloc[:,i].values)
         ndf.iloc[:,i] = ndf.iloc[:,i] -(A * np.exp(K * ndf.iloc[:,i].index))
     return ndf
@@ -109,7 +110,10 @@ def run_analysis(fname):
          testdata_form =[]
          for i in range(len(circdata)):
              testdata_form.append(p.number_to_words(i)+' = circdata['+str(i)+']')
-         testdata = eval('rlist('+', '.join(testdata_form)+')')
+         testdata_form = ', '.join(testdata_form)
+         testdata_form = 'rlist(' + testdata_form + ')'
+         testdata_form = testdata_form.replace("-", "")
+         testdata = eval(testdata_form)
          wwt_out = wwt(testdata)
          pval = float(wwt_out[3].r_repr())
          gen_phase_plot(stats,pval,bname)
