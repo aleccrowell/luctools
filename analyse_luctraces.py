@@ -24,19 +24,17 @@ plt.rcParams['image.cmap'] = 'viridis'
 
 
 def get_app(e,srate,mode):
-    sp = np.fft.fft(e)
-    freq = np.fft.fftfreq(e.shape[-1])
-    pindex =  np.where(sp.real==np.max(sp.real[np.abs(freq) > (srate/36)]))
-    phase = np.angle(sp[pindex])[0]%(np.pi/2)
-    phase = phase*2
+    sp = np.fft.fft(e,n=1000)
+    #sp = np.fft.fftshift(sp)
+    freq = np.fft.fftfreq(len(sp))
+    pindex =  np.where(sp.real==np.max(sp.real[(freq > (srate/32))&(freq < (srate/16))]))
+    #phase = np.angle(sp[pindex])[0]%(np.pi/2)
+    #phase = phase*2
+    phase = np.angle(sp[pindex])[0]
     amp = (np.abs(sp.real[pindex])**2)[0]
-    #per = np.abs(srate/freq[pindex])[0]
+    per = np.abs(srate/freq[pindex])[0]
     if mode == 'ols':
         spec = specar(robjects.FloatVector(e), 1000, order = 15, method = "ols", plot='FALSE')
-        pindex =  np.where(np.asarray(spec[1])==np.max(np.asarray(spec[1])[np.asarray(spec[0]) > (srate/36)]))
-        per = 1/np.asarray(spec[0])[np.max(pindex[0])]
-    elif mode =='fft':
-        spec = spectrum(robjects.FloatVector(e), spans=robjects.IntVector(3,3), plot='FALSE')
         pindex =  np.where(np.asarray(spec[1])==np.max(np.asarray(spec[1])[np.asarray(spec[0]) > (srate/36)]))
         per = 1/np.asarray(spec[0])[np.max(pindex[0])]
     return amp, phase, per
@@ -155,7 +153,7 @@ def main(argv):
     inputfile = ''
     outputfile = ''
     pmin = 16
-    pmax = 39
+    pmax = 32
     try:
         opts, args = getopt.getopt(argv,"h:i:s:pl:ph:",["help","ifile=","srate=","pmin=","pmax="])
     except getopt.GetoptError:
