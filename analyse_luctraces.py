@@ -27,7 +27,8 @@ def get_app(e,srate,mode):
     sp = np.fft.fft(e)
     freq = np.fft.fftfreq(e.shape[-1])
     pindex =  np.where(sp.real==np.max(sp.real[np.abs(freq) > (srate/36)]))
-    phase = np.angle(sp[pindex])[0]
+    phase = np.angle(sp[pindex])[0]%(np.pi/2)
+    phase = phase*2
     amp = (np.abs(sp.real[pindex])**2)[0]
     #per = np.abs(srate/freq[pindex])[0]
     if mode == 'ols':
@@ -65,8 +66,8 @@ def gen_tsplot(df,fname,srate):
     ax.axvline(x=48, color='k', linestyle='--')
     ax.axvline(x=72, color='k', linestyle='--')
     ax.axvline(x=96, color='k', linestyle='--')
-    ax.axvline(x=120, color='k', linestyle='--')
-    plt.xticks(range(0,144,24))
+    #ax.axvline(x=120, color='k', linestyle='--')
+    plt.xticks(range(0,120,24))
     plt.savefig(fname+'.pdf')
     plt.close()
 
@@ -102,7 +103,7 @@ def get_stats(df,sr,m='ols'):
     return amps, pers, phases
 
 
-def gen_phase_plot(l,p,n):
+def gen_phase_plot(l,p,n,pl,ph):
      ax = plt.subplot(111, projection='polar')
      #cmap = get_cmap('viridis')
      #cmap = sns.cubehelix_palette(len(l[1].keys()), as_cmap=True)
@@ -117,21 +118,22 @@ def gen_phase_plot(l,p,n):
      ax.set_theta_offset(np.pi/2)
      ax.set_thetagrids(angles=np.linspace(0,360,12), labels=range(0,22,2))
      ax.set_title(n, va='bottom')
-     ax.set_rlabel_position(60)
+     ax.set_rlabel_position(0)
      #ax.set_rmax(1 + np.floor(max([max(i) for i in list(l[1].values())])))
      #ax.set_rmin(np.ceil(min([min(i) for i in list(l[1].values())])-1))
-     ax.set_rmax(36)
-     ax.set_rmin(12)
-     ax.set_rticks(range(12,37,4))
+     ax.set_rmax(ph)
+     ax.set_rmin(pl)
+     ax.set_rticks(range(pl,ph,4))
      plt.figtext(0.78, 0.2,'p value of equal \nphases = '+str(round(p,2)))
      plt.legend(bbox_to_anchor=[1.45, 1.1])
      plt.savefig(n+'_phase_v_period.pdf')
      plt.close()
 
-def run_analysis(fname,samplerate):
+def run_analysis(fname,samplerate,pmin,pmax):
          data = pd.read_csv(fname,index_col=0)
          bname = fname[:-4]
          data = data.ix[int(math.floor(12*samplerate)):].reset_index(drop=True)
+         data = data.ix[:int(math.floor(96*samplerate))]
          gen_tsplot(data,bname,samplerate)
          detrended = detrend(data)
          gen_tsplot(detrended,bname+'_detrended',samplerate)
@@ -147,13 +149,15 @@ def run_analysis(fname,samplerate):
          testdata = eval(testdata_form)
          wwt_out = wwt(testdata)
          pval = float(wwt_out[3].r_repr())
-         gen_phase_plot(stats,pval,bname)
+         gen_phase_plot(stats,pval,bname,pmin,pmax)
 
 def main(argv):
     inputfile = ''
     outputfile = ''
+    pmin = 16
+    pmax = 39
     try:
-        opts, args = getopt.getopt(argv,"h:i:s:",["help","ifile=","srate="])
+        opts, args = getopt.getopt(argv,"h:i:s:pl:ph:",["help","ifile=","srate=","pmin=","pmax="])
     except getopt.GetoptError:
         print('residuals.py -i <inputfile>')
         sys.exit(2)
@@ -165,7 +169,11 @@ def main(argv):
             inputfile = arg
         elif opt in ("-s", "--srate"):
             srate = float(arg)
-    run_analysis(inputfile,srate)
+        elif opt in ("-pl", "--pmin"):
+            pmin = float(arg)
+        elif opt in ("-ph", "--pmax"):
+            pmax = float(arg)
+    run_analysis(inputfile,srate,pmin,pmax)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
