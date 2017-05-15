@@ -10,6 +10,7 @@ from matplotlib.cm import get_cmap
 import inflect
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
+import math
 circularlib=importr('circular')
 statslib=importr('stats')
 circular=robjects.r('circular')
@@ -128,6 +129,7 @@ def gen_phase_plot(l,p,n):
 def run_analysis(fname,samplerate):
          data = pd.read_csv(fname,index_col=0)
          bname = fname[:-4]
+         data = data.ix[int(math.floor(12*samplerate)):].reset_index(drop=True)
          gen_tsplot(data,bname,samplerate)
          detrended = detrend(data)
          gen_tsplot(detrended,bname+'_detrended',samplerate)
