@@ -75,8 +75,10 @@ def detrend(df):
     ndf = df.copy()
     for i in range(len(ndf.columns.values)):
         ndf.iloc[:,i] = ndf.iloc[:,i].values - np.min(ndf.iloc[:,i].values) + 1
-        A, K = fit_exp_linear(ndf.iloc[:,i].index,ndf.iloc[:,i].values)
-        ndf.iloc[:,i] = ndf.iloc[:,i] -(A * np.exp(K * ndf.iloc[:,i].index))
+        #A, K = fit_exp_linear(ndf.iloc[:,i].index,ndf.iloc[:,i].values)
+        a, c = np.polyfit(np.log(ndf.iloc[:,i].index + 1), ndf.iloc[:,i], 1)
+        #ndf.iloc[:,i] = ndf.iloc[:,i] -(A * np.exp(K * ndf.iloc[:,i].index))
+        ndf.iloc[:,i] = ndf.iloc[:,i] - (a * np.log(ndf.iloc[:,i].index + 1) + c)
     return ndf
 
 
