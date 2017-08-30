@@ -35,7 +35,7 @@ def get_app(e,srate,mode):
     per = np.abs(srate/freq[pindex])[0]
     if mode == 'ols':
         spec = specar(robjects.FloatVector(e), 1000, order = 15, method = "ols", plot='FALSE')
-        pindex =  np.where(np.asarray(spec[1])==np.max(np.asarray(spec[1])[np.asarray(spec[0]) > (srate/36)]))
+        pindex =  np.where(np.asarray(spec[1])==np.max(np.asarray(spec[1])[np.asarray(spec[0]) > (srate/32)]))
         per = 1/np.asarray(spec[0])[np.max(pindex[0])]
     return amp, phase, per
 
@@ -130,7 +130,7 @@ def gen_phase_plot(l,p,n,pl,ph):
 def run_analysis(fname,samplerate,pmin,pmax):
          data = pd.read_csv(fname,index_col=0)
          bname = fname[:-4]
-         data = data.ix[int(math.floor(12*samplerate)):].reset_index(drop=True)
+         data = data.ix[int(math.floor(0*samplerate)):].reset_index(drop=True)
          data = data.ix[:int(math.floor(96*samplerate))]
          gen_tsplot(data,bname,samplerate)
          detrended = detrend(data)
