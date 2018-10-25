@@ -71,7 +71,9 @@ TO DO
 
 * Implement statistical comparison of phases between groups.
 
-* Add api reference on readthedocs.
+* Improve phase determination.
+
+* Add API reference on readthedocs.
 
 ----
 Built With
