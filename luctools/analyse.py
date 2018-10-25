@@ -156,8 +156,8 @@ class luctraces:
         filename : str
             Output path for writing plot.
         """
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='polar')
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_axes([0.1, 0.1, 0.8, 0.8],projection='polar')
         labels = np.array([i.split('.')[0] for i in self.data.columns.values[np.where(np.logical_and(~np.isnan(self.phases), ~np.isnan(self.periods)))]])
         phases = np.array(self.phases)[np.where(np.logical_and(~np.isnan(self.phases), ~np.isnan(self.periods)))]
         periods = np.array(self.periods)[np.where(np.logical_and(~np.isnan(self.phases), ~np.isnan(self.periods)))]
@@ -177,8 +177,9 @@ class luctraces:
         rlabels = result = [None]*(len(range(int(min([(np.nanmin(self.periods)-1), 18])), int(max([(np.nanmax(self.periods)+1), 24])), 1)))
         rlabels[::2] = np.arange(min([(int(np.nanmin(self.periods))-1), 18]), max([(int(np.nanmax(self.periods))+1), 24]), 2)
         ax.set_yticklabels(rlabels)
-        plt.legend(bbox_to_anchor=[1.45, 1.1])
-        fig.tight_layout()
+        #plt.legend(bbox_to_anchor=[1.45, 1.1])
+        ax.legend(bbox_to_anchor=(.85, -0.05),fancybox=True, shadow=True, ncol=2)
+        #fig.tight_layout()
         plt.savefig(filename+'_phase_v_period.pdf')
         plt.close()
 
