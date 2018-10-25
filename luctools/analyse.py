@@ -179,7 +179,7 @@ class luctraces:
         ax.set_yticklabels(rlabels)
         #plt.legend(bbox_to_anchor=[1.45, 1.1])
         ax.legend(bbox_to_anchor=(.85, -0.05),fancybox=True, shadow=True, ncol=2)
-        #fig.tight_layout()
+        fig.tight_layout()
         plt.savefig(filename+'_phase_v_period.pdf')
         plt.close()
 
