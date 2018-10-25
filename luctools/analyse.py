@@ -178,6 +178,7 @@ class luctraces:
         rlabels[::2] = np.arange(min([(int(np.nanmin(self.periods))-1), 18]), max([(int(np.nanmax(self.periods))+1), 24]), 2)
         ax.set_yticklabels(rlabels)
         plt.legend(bbox_to_anchor=[1.45, 1.1])
+        fig.tight_layout()
         plt.savefig(filename+'_phase_v_period.pdf')
         plt.close()
 
