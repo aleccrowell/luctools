@@ -108,7 +108,7 @@ def gen_phase_plot(l,p,n,pl,ph):
      colors = ["windows blue", "amber", "greyish", "magenta", "dusty purple"]
      cyc = [sns.xkcd_rgb[i] for i in colors]
      #cyc = [cmap(i/(len(l[1].keys())-1)) for i in range(len(l[1].keys()))]
-     ax.set_color_cycle(cyc)
+     plt.set_color_cycle(cyc)
      for i in l[1].keys():
          ax.scatter(l[2][i], l[1][i],label=i+r' $\overline{\tau}$ = '+ str(round(np.mean(l[1][i]),1)) + '($\pm$ ' + str(round(1.96*np.std(l[1][i]),1)) + ')',alpha=1,s=10)
      ax.grid(True)
