@@ -9,12 +9,45 @@ from scipy.stats import vonmises
 
 
 class luctraces:
+    """
+    Performs analysis of luciferase time series data sets.
+
+    This class takes a dataset with labeled columns of luciferase expression measurements.  It detrends these measurements and plots replicates with confidence intervals.  It also calculates period and phase using autocorrelation and FFT.
+    
+    Parameters
+    ----------
+    filename : str
+        Path to the input dataset.
+    srate : float
+        Sample rate in samples per minute of the dataset.
+
+    Attributes
+    ----------
+    data : dataframe
+        This is where the input data is stored.
+    srate : float
+        This is where thesample rate is stored.
+    """
     def __init__(self, filename, srate):
+        """
+        Imports data and initializes a luctraces object.
+        Takes a file containing columns of expression measurements and a sample rate and stores both.
+        """
         self.data = pd.read_csv(filename, index_col=0)
         self.srate = srate
         self.notdone = True
 
-    def gen_tsplot(self, fname):
+    def gen_tsplot(self, filename):
+        """
+        Plots time series expression data with confidence intervals.
+
+        Groups data by genotype and plots time series with 95% confidence intervals.
+           
+        Parameters
+        ----------
+        filename : str
+            Output path for writing plot.
+        """
         ldf = pd.melt(self.data.reset_index(), id_vars=[self.data.reset_index().columns.values.tolist()[0]], value_vars=self.data.columns.values.tolist())
         ldf['replicate'] = ldf['variable'].apply(lambda x: x.split('.')[1] if len(x.split('.')) != 1 else '0')
         ldf['variable'] = ldf['variable'].apply(lambda x: x.split('.')[0])
@@ -31,10 +64,16 @@ class luctraces:
             ax.axvline(x=i, color='k', linestyle='--')
         plt.xticks(range(0, int(np.floor(ldf['Time (hrs)'].max())), 24))
         ax.set_xlim(int(np.floor(ldf['Time (hrs)'].min())), int(np.floor(ldf['Time (hrs)'].max())))
-        plt.savefig(fname+'.pdf', bbox_inches='tight')
+        plt.savefig(filename+'.pdf', bbox_inches='tight')
         plt.close()
 
     def detrend(self):
+        """
+        Detrends time series.
+
+        Subtracts baseline expression, fits a log and removes decay trend.
+        
+        """
         for i in range(len(self.data.columns.values)):
             self.data.iloc[:, i] = self.data.iloc[:, i].values - np.min(self.data.iloc[:, i].values) + 1
             a, c = np.polyfit(np.log(self.data.iloc[:, i].index + 1), self.data.iloc[:, i], 1)
@@ -47,16 +86,31 @@ class luctraces:
 #area = norm.cdf(r,m2,std2) + (1.-norm.cdf(r,m1,std1))
 #where r is the point of intersection of the pdfs and m and std are parameters of the distributions
 
-    def get_autocorrs(self):
-        self.autocorrs = []
-        for i in range(self.data.values.shape[1]):
-            temp = []
-            for j in range(len(self.data.values[:, i])):
-                temp.append(np.corrcoef(self.data.values[:, i], np.roll(self.data.values[:, i], j))[0,1])
-            self.autocorrs.append(temp)
+    
 
 
     def get_periods(self):
+        """
+        Calculates dominant period of expression data.
+
+        Calculates autocorrelations for each time series. Performs FFT on autocorrelations and finds dominant peak of resulting power spectra.
+        
+        Attributes
+        ----------
+        autocorrs : array
+            autocorrelations at all lags for each time series.
+        periods : list
+            Dominant period for each time series.
+        """
+        def get_autocorrs():
+            self.autocorrs = []
+            for i in range(self.data.values.shape[1]):
+                temp = []
+                for j in range(len(self.data.values[:, i])):
+                    temp.append(np.corrcoef(self.data.values[:, i], np.roll(
+                        self.data.values[:, i], j))[0, 1])
+                self.autocorrs.append(temp)
+        get_autocorrs()
         self.periods = []
         for i in range(len(self.autocorrs)):
             t = np.arange(len(self.autocorrs[i]))
@@ -69,6 +123,16 @@ class luctraces:
                 self.periods.append(np.nan)
 
     def get_phases(self):
+        """
+        Calculates phase of expression at dominant period.
+
+        Calculates FFT of time series and obtains phase angle for dominant period.
+        
+        Attributes
+        ----------
+        phases : list
+            phase angle of dominant period from FFT for each time series.
+        """
         self.phases = []
         for i in range(self.data.values.shape[1]):
             t = np.arange(len(self.data.values[:, i]))
@@ -82,6 +146,16 @@ class luctraces:
 
 #Just produce phase period plot for initial release
     def gen_phase_plot(self, filename):
+        """
+        Plots predicted phase and period for each time series.
+
+        Produces polar plot with phase represented by angle and period represented by radius.
+
+        Parameters
+        ----------
+        filename : str
+            Output path for writing plot.
+        """
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='polar')
         labels = np.array([i.split('.')[0] for i in self.data.columns.values[np.where(np.logical_and(~np.isnan(self.phases), ~np.isnan(self.periods)))]])
